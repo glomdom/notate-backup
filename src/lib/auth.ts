@@ -7,14 +7,20 @@ export type AuthTokens = {
   refreshToken: string;
 };
 
-
-interface JwtPayload {
+export interface JwtPayload {
   exp: number;
 }
 
-function getExpiryFromToken(token: string): number {
-  const decoded = jwtDecode<JwtPayload>(token);
-  return decoded.exp;
+export function getExpiryFromToken(token: string): number {
+  try {
+    const decoded = jwtDecode<JwtPayload>(token);
+
+    return decoded.exp;
+  } catch (error) {
+    console.error("Error decoding token:", error);
+
+    return Date.now() / 1000 - 1;
+  }
 }
 
 export function getAuthTokens(): AuthTokens | null {
@@ -36,7 +42,7 @@ export async function refreshAuthToken(): Promise<AuthTokens> {
   if (!tokens) throw new Error("No refresh token available");
 
   try {
-    const response = await axios.post("/api/auth/refresh",
+    const response = await axios.post("/auth/refresh",
       { refreshToken: tokens.refreshToken }
     );
     const data = response.data;
@@ -52,11 +58,13 @@ export async function refreshAuthToken(): Promise<AuthTokens> {
     } else {
       console.error("Refresh failed", data);
       removeAuthTokens();
+
       throw new Error("Token refresh failed");
     }
   } catch (err) {
     console.error("Error in refreshAuthToken:", err);
     removeAuthTokens();
+
     throw err;
   }
 }

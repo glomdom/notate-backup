@@ -48,18 +48,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (storedAuth && storedUser) {
         try {
           const parsedAuth = JSON.parse(storedAuth) as AuthTokens;
-          // Use a small buffer (10 seconds) to avoid premature expiry.
-          const buffer = 10;
+          const parsedUser = JSON.parse(storedUser);
           const currentTime = Date.now() / 1000;
+          const buffer = 10; // 10 seconds buffer
+
           if (parsedAuth.accessTokenExpiry > currentTime + buffer) {
             setAuthTokens(parsedAuth);
-            setUser(JSON.parse(storedUser));
+            setUser(parsedUser);
           } else {
-            // Token expired or nearly expired: attempt refresh.
             await refreshToken();
           }
         } catch (error) {
-          console.error("Error during auth initialization:", error);
+          console.error("Auth initialization error:", error);
+          await logout();
         }
       }
       setLoading(false);

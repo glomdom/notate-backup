@@ -69,8 +69,8 @@ api.interceptors.response.use(
       return api(originalRequest);
     } catch (refreshError) {
       isRefreshing = false;
-      // If refresh fails, force logout and prevent further retries.
       await performLogout();
+      window.location.href = "/login"; // Force full redirect to clear state
       return Promise.reject(refreshError);
     }
   }

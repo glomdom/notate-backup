@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import { AuthProvider } from "@/context/AuthProvider";
-import ClientAuthCheck from "@/components/ClientAuthCheck";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,8 +16,6 @@ export default function RootLayout({
     <html lang="en" className="dark" style={{ colorScheme: "dark" }}>
       <body>
         <AuthProvider>
-          <ClientAuthCheck />
-
           {children}
         </AuthProvider>
       </body>
