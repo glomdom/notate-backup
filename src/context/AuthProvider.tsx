@@ -2,8 +2,9 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import api from "@/lib/api";
 import { refreshAuthToken, performLogout } from "@/lib/auth";
+import Cookies from "js-cookie";
+import api from "@/lib/api";
 
 type User = {
   id: string;
@@ -42,8 +43,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const storedAuth = localStorage.getItem("auth");
-      const storedUser = localStorage.getItem("user");
+      const storedAuth = Cookies.get("auth");
+      const storedUser = Cookies.get("user");
 
       if (storedAuth && storedUser) {
         try {
@@ -81,8 +82,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           refreshToken: data.refreshToken.token,
         };
 
-        localStorage.setItem("auth", JSON.stringify(newTokens));
-        localStorage.setItem("user", JSON.stringify(data.user));
+        Cookies.set("auth", JSON.stringify(newTokens), {
+          expires: 1 / 96, // 15 minutes expressed in days
+          secure: true,
+          sameSite: "strict",
+        });
+
+        Cookies.set("user", JSON.stringify(data.user), {
+          expires: 1 / 96,
+          secure: true,
+          sameSite: "strict",
+        });
 
         setAuthTokens(newTokens);
         setUser(data.user);
@@ -98,10 +108,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await performLogout();
     } finally {
-      localStorage.removeItem("auth");
-      localStorage.removeItem("user");
+      Cookies.remove("auth");
+      Cookies.remove("user");
+
       setAuthTokens(null);
       setUser(null);
+
       router.push("/login");
     }
   };
@@ -109,10 +121,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshToken = async (): Promise<AuthTokens> => {
     try {
       const newTokens = await refreshAuthToken();
+
       setAuthTokens(newTokens);
+
+      Cookies.set("auth", JSON.stringify(newTokens), {
+        expires: 1 / 96,
+        secure: true,
+        sameSite: "strict",
+      });
+
       return newTokens;
     } catch (error) {
       await logout();
+
       throw error;
     }
   };
